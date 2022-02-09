@@ -1,0 +1,26 @@
+{
+  "name": "parsel",
+  "version": "1.0.0",
+  "description": "Cardinal API request/response condenser",
+  "main": "src/server/app.js",
+  "scripts": {
+    "lint": "./node_modules/.bin/eslint --fix ./src/",
+    "release": "np"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/t-ski/parsel.git"
+  },
+  "author": "Thassilo Martin Schiepanski",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/t-ski/parsel/issues"
+  },
+  "homepage": "https://github.com/t-ski/parsel#readme",
+  "devDependencies": {
+    "eslint": "^7.26.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
