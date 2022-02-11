@@ -45,11 +45,11 @@ async function handleRequest(req, res) {
         payload.condensedReq
         .forEach(async singleReq => {
             const singleRes = await httpRequest(new URL(`${internalOrigin}${singleReq.path}`), singleReq.options);
-            
+
             condensedRes.push(singleRes);
 
-            reqMessage += `\n> ${singleReq.path}`;
-
+            reqMessage += `\n+ ${singleReq.path}`;
+            
             if(condensedRes.length < limit) {
                 return;
             }

@@ -1,6 +1,8 @@
 .DS_Store
 
 package-lock.json
+src/client-browser.js
 
 node_modules/
+dist/
 test/

@@ -1,0 +1,6 @@
+/**
+ * Parsel: HTTP API mediation interface for automatic request/response condensation.
+ *         Enhances throughput performance in high-scale environments.
+ * 
+ * Copyright (c) Thassilo Martin Schiepanski
+ */
