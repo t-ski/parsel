@@ -29,9 +29,11 @@ rmdirSync(join(__dirname, "../dist"), {
 });
 mkdirSync(join(__dirname, "../dist"));
 
+build("module");
+build("node-fetch");
 build("server");
-build("client");
-build("client-browser");
+build("client-node");
+build("client-browser", "parsel.min");
 
 
 console.log("> Distribution build completed.");

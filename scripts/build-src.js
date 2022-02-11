@@ -35,10 +35,10 @@ function modificationHandler(path, modCallback) {
 }
 
 
-// Client
 modificationHandler("../src/client.js", path => {    
     let code = String(readFileSync(path));
 
+    // Browser client
     code = `
     const PARSEL = (_ => {
         const module = { exports: {} };
@@ -48,7 +48,18 @@ modificationHandler("../src/client.js", path => {
     `;
 
     writeFileSync(join(dirname(path), "client-browser.js"), code);
+
+    // Node client
+    code = `
+    const fetch = require("./node-fetch");
+    ${code}
+    `;
+
+    writeFileSync(join(dirname(path), "client-node.js"), code);
 });
 
 
-console.log(runOnce ? "> Source build completed." : "> Watching source file changes for build...");
+console.log(runOnce
+    ? "> Source build completed."
+    : "> Watching source file changes for build..."
+);
