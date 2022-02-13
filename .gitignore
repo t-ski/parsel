@@ -5,4 +5,4 @@ src/client-*.js
 
 node_modules/
 dist/
-test/
+test-api/

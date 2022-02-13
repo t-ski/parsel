@@ -36,26 +36,22 @@ function modificationHandler(path, modCallback) {
 
 
 modificationHandler("../src/client.js", path => {    
-    let code = String(readFileSync(path));
+    const code = String(readFileSync(path));
 
     // Browser client
-    code = `
+    writeFileSync(join(dirname(path), "client-browser.js"), `
     const PARSEL = (_ => {
         const module = { exports: {} };
         ${code}
         return module.exports;
     })();
-    `;
-
-    writeFileSync(join(dirname(path), "client-browser.js"), code);
+    `);
 
     // Node client
-    code = `
+    writeFileSync(join(dirname(path), "client-node.js"), `
     const fetch = require("./node-fetch");
     ${code}
-    `;
-
-    writeFileSync(join(dirname(path), "client-node.js"), code);
+    `);
 });
 
 

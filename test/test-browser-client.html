@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Parsel Test</title>
+        <script src="/parsel.min.js"></script>
+        <script>
+            const api = new PARSEL({
+                origin: "http://localhost:9797",
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                },
+                interval: 1000
+            });
+
+            // SINGLE
+            // Absolute
+            const req1 = api.interval("/resource/0", {
+                method: "get"  // Fetch augmented
+            });
+            api.interval("/resource/0", {
+                method: "get"  // Fetch augmented
+            });
+            
+            req1.then(res => {
+                console.log("RESPONSE 1:");
+                console.log(res);
+            });
+
+            // fetch(), schedule()->complete(),
+            // schedule() :: promise, complete :: promise all?, scheduled applied?
+
+            // MULTIPLE / CONDENSED
+            const req3 = api.schedule("/resource/1", {
+                method: "post",
+                body: {
+                    a: 1
+                }
+            });
+            const req4 = api.schedule("/resource/2", {
+                method: "get"
+            })
+            .then (res => res.json())
+            .then(res => {
+                console.log("RESPONSE 4:");
+                console.log(res);
+            });
+
+            api.info();
+
+            api.complete();
+        </script>
+    </head>
+    <body>
+        PARSEL TEST BROWSER CLIENT
+    </body>
+</html>

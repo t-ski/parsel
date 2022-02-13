@@ -23,16 +23,16 @@ class Request {
         // fetch <=> parsel proxy <=> actual api (local request)
         const proxyUrl = new URL(`${origin}${config.proxyPath}`);
         proxyUrl.port = config.proxyPort;
-        
+
         fetch(proxyUrl.toString(), {
             method: "POST",
             body: JSON.stringify({
                 originalOrigin: origin,
-
+                
                 condensedReq
             })
         })
-            .then(condensedRes => condensedRes.json())
+            .then(res => res.json())
             .then(condensedRes => {
                 let i = 0;
                 condensedRes.forEach(singleRes => {
@@ -81,15 +81,18 @@ class Request {
             });
         };
 
+        // TODO: Provide un-promisified?
+        const message = data.data;
+        delete data.data;
         this.resolve({
             ...data,
 
             // Mediate support methods
             text: _ => {
-                return promisify(data.message);
+                return promisify(message);
             },
             json: _ => {
-                return promisify(JSON.stringify(data.message));
+                return promisify(JSON.stringify(message));
             }
         });
     }
@@ -98,18 +101,17 @@ class Request {
 class Scope {
     static IntervalRequest = class extends Request {
         static queue = [];
-        static timeout = {};
+        static timeout;
     
         constructor(config, endpoint, options) {
             super(config, endpoint, options);
-            
-            if(this.constructor.timeout[this.url.origin]) {
+
+            if(this.constructor.timeout) {
                 return;
             }
-    
-            this.constructor.timeout[this.url.origin]
-            = setTimeout(_ => {
-                    this.constructor.complete(config.origin);
+            
+            this.constructor.timeout = setTimeout(_ => {
+                this.constructor.complete(config.origin);
             }, config.interval || 250);
         }
     };
@@ -151,7 +153,7 @@ class Scope {
     }
 
     fetch(pathname, options) {
-        return fetch(`${this.config.origin}${pathname}`, options);
+        //return fetch(`${this.config.origin}${pathname}`, options);
     }
 
     interval(pathname, options) {

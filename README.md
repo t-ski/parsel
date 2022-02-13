@@ -2,29 +2,29 @@
 
 HTTP API mediation interface for automatic request/response condensation. Enhances throughput performance in high-scale environments.
 
-`t 0.0`&ensp;|&ensp;`request 1` → `API`&ensp;|&ensp;`t 0.1`
-`t 1.0`&ensp;|&ensp;`request 2` → `API`&ensp;|&ensp;`t 1.1`
-`t 2.0`&ensp;|&ensp;`request 3` → `API`&ensp;|&ensp;`t 2.1`
-
-`t 0.0`&ensp;|&ensp;`request 1` ┓
-`t 1.0`&ensp;|&ensp;`request 2`&ensp;↦ `API`&ensp;|&ensp;`t 2.1`
+`t 0.0`&ensp;|&ensp;`request 1` → `API`&ensp;|&ensp;`t 0.1`  
+`t 1.0`&ensp;|&ensp;`request 2` → `API`&ensp;|&ensp;`t 1.1`  
+`t 2.0`&ensp;|&ensp;`request 3` → `API`&ensp;|&ensp;`t 2.1`  
+  
+`t 0.0`&ensp;|&ensp;`request 1` ┓  
+`t 1.0`&ensp;|&ensp;`request 2`&ensp;↦ `API`&ensp;|&ensp;`t 2.1`  
 `t 2.0`&ensp;|&ensp;`request 3` ┛
 
 ## Introduction
 
-Most HTTP API designs – REST in particular – segregate atomic resources access utilizing HTTP parameters (such as method and query) for stateless operation. Initializing a consuming client interface, multiple API requests are usually submitted concurrently or within an infinitesimal time interval.  
+Most HTTP API designs – REST in particular – segregate atomic resource access with HTTP parameters for stateless operation. Initializing a consuming client interface, multiple API requests are usually submitted concurrently or within an infinitesimal time interval.  
   
-Parsel provides a communication mediator between (API) server and client; Multiple requests within a suited temporal context are strategically being condensed, without changing the general programmatic concept.
+Parsel provides a communication mediator between (API) server and client: Based on different strategies, multiple contextually related requests are being condensed into a single request. However, that behavior is abstracted to a minimum interface and hence does not change the common programmatic concept.
 
 ## Example
 
 ``` js
 const api = new PARSEL({
-    origin: "https://example.con",
+    origin: "https://example.com",
     interval: 250
 });
 
-// Requests made within 250ms condensed submit bundled:
+// Bundles interval() requests made within configured interval:
 api.interval("/resource/0", {
     method: "get"  // Fetch augmented
 })
@@ -37,7 +37,7 @@ api.interval("/resource/1", {
 .then(res => res.json())
 .then(res => console.log(res));
 
-// Requests suspended submit upon manual completion:
+// Bundles schedule() requests until manual completion:
 const scheduledReq1 = api.schedule("/resource/2", {
     method: "get"
 });
@@ -60,7 +60,7 @@ api.complete();
 npm install parsel
 ```
 
-#### Browser client
+### Browser client
 
 ``` js
 <script src="https://unpkg.com/parsel/dist/parsel.min.js"></script>
