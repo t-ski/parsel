@@ -8,21 +8,27 @@ const parsel = require("../src/module").server;
 
 parsel.mediate();
 
-/* parsel.on("message", message => {
-	console.log(message);
-}); */
+parsel.on("message", message => {
+	console.log(`\n\x1b[36m${message}\x1b[0m\n`);
+});
 
 
 const app = express();
-	
+
+app.use(express.json());
+
 // ROUTES
 
 app.get("/resource/:id", (_, res) => {  
 	res.send("Success");  
 });
 
-app.post("/resource", (req, res) => {  
-	res.send(req.body);
+app.post("/resource", (req, res) => {
+	res.send({
+		...req.body,
+		
+		b: 2
+	});
 });
 
 const serveFile = name => {

@@ -1,4 +1,4 @@
-module.exports = function(url, { body, ...options}) {
+module.exports = function(url, { body, ...options }) {
 	url = new URL(url);
 	
 	const modOptions = {
@@ -31,7 +31,7 @@ module.exports = function(url, { body, ...options}) {
 				resolve({
 					headers: res.headers,
 					status: res.statusCode,
-
+					
 					text: _ => {
 						return promisify(body);
 					},
@@ -42,8 +42,7 @@ module.exports = function(url, { body, ...options}) {
 			});
 		});
 
-		body
-		&& req.write(body);
+		body && req.write(body);
 
 		req.on("error", err => {
 			reject(err);

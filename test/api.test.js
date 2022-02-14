@@ -1,3 +1,5 @@
+require("./test-server");
+
 const PARSEL = require("../src/module").client;
 
 const api = new PARSEL({
@@ -6,16 +8,82 @@ const api = new PARSEL({
 });
 
 
-describe("Scheduled request", _ => {
-    test("should respond with 200 : 'Success'", _ => {
-        api.schedule("/resource/0", {
-            method: "get"
-        })
-        .then(async res1 => {
-            value(res1.status).for(200);
-            value(await res1.text()).for("Success");
-        });
+// SCHEDULE REQUESTS
+
+test("SCHEDULE GET should respond with 200 : 'Success'", done => {
+    api.schedule("/resource/0", {
+        method: "get"
+    })
+    .then(async res => {
+        value(res.status).for(200);
+        value(await res.text()).for("Success");
+
+        done();
+    });
+});
+
+test("SCHEDULE POST should respond with 200 : [object]", done => {
+    api.schedule("/resource", {
+        method: "post",
+        body: {
+            b: 1
+        }
+    })
+    .then(async res => {
+        value(res.status).for(200);
+        value(await res.json()).for({ a: 1, b: 2 });
+
+        done();
+    });
+});
+
+test("SCHEDULE GET should respond with 404", done => {
+    api.schedule("/missing/0", {
+        method: "get"
+    })
+    .then(res => {
+        value(res.status).for(404);
         
-        api.complete();
+        done();
+    });
+});
+
+test("SCHEDULE POST should respond with 404", done => {
+    api.schedule("/missing", {
+        method: "post",
+        body: {}
+    })
+    .then(res => {
+        value(res.status).for(404);
+        
+        done();
+    });
+});
+
+api.complete();
+
+
+// INTERVAL REQUESTS
+
+test("INTERVAL GET should respond with 200 : 'Success'", done => {
+    api.interval("/resource/0", {
+        method: "get"
+    })
+    .then(async res => {
+        value(res.status).for(200);
+        value(await res.text()).for("Success");
+
+        done();
+    });
+});
+
+test("INTERVAL GET should respond with 404", done => {
+    api.interval("/missing/0", {
+        method: "get"
+    })
+    .then(res => {
+        value(res.status).for(404);
+        
+        done();
     });
 });

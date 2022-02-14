@@ -1,5 +1,3 @@
-const { json } = require("express");
-
 const config = {
 	proxyPath: "/",
 	proxyPort: 5757
@@ -63,18 +61,21 @@ module.exports.mediate = function() {
 
 			payload.condensedReq
 				.forEach(async singleReq => {
-					let singleRes = await require("./node-fetch")
+					singleReq.options.body = JSON.stringify(singleReq.options.body);
+					
+					const singleRes = await require("./node-fetch")
 					(`${internalOrigin}${singleReq.path}`, singleReq.options);
 
 					let data;
 					try {
 						data = await singleRes.json();
-					} catch {
+					} catch {
 						data = await singleRes.text();
 					}
 
 					delete singleRes.text;
 					delete singleRes.json;
+
 					condensedRes.push({
 						data,
 						
@@ -88,7 +89,7 @@ module.exports.mediate = function() {
 					}
 
 					res.statusCode = 200;
-					
+
 					res.end(JSON.stringify(condensedRes));
 
 					message(reqMessage);

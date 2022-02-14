@@ -10,7 +10,7 @@ class Request {
     static complete(origin) {
         let curQueue = [].concat(this.queue);
         this.queue.length = 0;
-
+        
         // TODO: If given protocol less retrieve registered related origin
         const condensedReq = curQueue
             .map(req => {
@@ -54,7 +54,7 @@ class Request {
     }
 
     constructor(config, endpoint, options) {
-        options = Object.assign(
+        options.headers = Object.assign(
             (options.headers || {}),
             (config.headers || {})
         );
@@ -65,10 +65,9 @@ class Request {
             ? `${config.origin}${endpoint}`
             : endpoint;
         this.url = new URL(url);
-
+        
         this.constructor.queue
-        = (this.constructor.queue || [])
-                .concat([this]);
+        .push(this);
     }
 
     setResolve(func) {

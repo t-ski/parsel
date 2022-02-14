@@ -1,4 +1,4 @@
-const { readdirSync } = require("fs");
+const { readdirSync, copyFileSync } = require("fs");
 const { join } = require("path");
 
 
@@ -25,57 +25,83 @@ require(join(testDirPath, "test-server.js"))
     });
 
     setTimeout(_ => {
-        log(`Complete: ${testMeta.passed}/${testMeta.passed + testMeta.failed} tests passed.`);
+        const passed = (testMeta.failed == 0);
+        const total = testMeta.passed + testMeta.failed;
+
+        log(`\n${highlight.badge("Complete", [255, 255, 255], passed ? [0, 200, 75] : [255, 0, 0])}${testMeta.passed}/${total} test${(total > 1) ? "s" : ""} passed.\n`);
         
-        process.exit((testMeta.failed > 0) ? 1 : 0);
+        process.exit(passed ? 0 : 1);
     }, testMeta.timeout);
 });
 
 
-const _log = console.log;
-
-console.log = message => {
-    _log(`[internal]: ${message}`);
+function highlightSequence(str, fg, bg, spec) {
+    return `${fg ? `\x1b[38;2;${fg[0]};${fg[1]};${fg[2]}m`: ""}${bg ? `\x1b[48;2;${bg[0]};${bg[1]};${bg[2]}m`: ""}${spec || ""}${str}\x1b[0m`;
 };
 
-function log(message) {
-    _log(message);
+const highlight = {
+    sequence: highlightSequence,
+
+    badge: (str, fg, bg) => {
+        return `\n${highlightSequence(` ${str.toUpperCase()} `, fg, bg, "\x1b[1m")} `;
+    },
+
+    type: val => {
+        if(typeof(val) == "string" || val instanceof String) {
+            return highlightSequence(`"${val.slice(0, 25)}${(val.length > 25) ? "..." : ""}"`, [249, 160, 16]);
+        }   
+        if(typeof(val) == "number" || val instanceof Number) {
+            return highlightSequence(val, [18, 68, 206], null, "\x1b[2m");
+        }
+        
+        return highlightSequence(JSON.stringify(val), [133, 151, 213]);
+    }
+};
+
+
+function log(message, indentLevel = 0) {
+    const groupWrap = (close = false) => {
+        for(let i = 0; i < indentLevel; i++) {
+            console[`group${close ? "End" : ""}`]();
+        }
+    };
+
+    groupWrap();
+
+    console.log(message);
+
+    groupWrap(true);
 }
 
 
-global.describe = function(descriptor, body) {
-    log(descriptor);
-    
-    global.test = function(descriptor, body) {
-        console.group();
-        log(descriptor);
-        console.groupEnd();
+const logMessageStack = [];
 
-        testMeta.passed++;
+global.test = function(descriptor, body) {
+    testMeta.passed++;
+
+    body(_ => {
+        log(`${highlight.badge("Test", null, [255, 175, 215])}${highlight.sequence(descriptor, null, null, "\x1b[1m")}\n`, 1);
         
-        global.value = function(evaledValue) {
-            return {
-                for: expectedValue => {
-                    const passed = (evaledValue === expectedValue);
+        logMessageStack.forEach(message => {
+            log(message);
+        });
+        logMessageStack.length = 0;
+    });
+};
 
-                    console.group();
-                    console.group();
-                    log(`Expected ${expectedValue}, got ${evaledValue}!`);
-                    console.groupEnd();
-                    console.groupEnd();
+global.value = function(evaledValue) {
+    return {
+        for: expectedValue => {
+            const passed = (evaledValue === expectedValue);
 
-                    if(passed) {
-                        return;
-                    }
+            logMessageStack.push(`${passed ? highlight.sequence("✓", [0, 200, 75]) : highlight.sequence("✗", [255, 0, 0])} Expected ${highlight.type(expectedValue)}, got ${highlight.type(evaledValue)}!`);
 
-                    testMeta.passed--;
-                    testMeta.failed++;
-                }
-            };
-        };
+            if(passed) {
+                return;
+            }
 
-        body();
+            testMeta.passed--;
+            testMeta.failed++;
+        }
     };
-
-    body();
 };
