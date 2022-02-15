@@ -4,15 +4,6 @@ const { join } = require("path");
 const express = require("express");
 
 
-const parsel = require("../src/module").server;
-
-parsel.mediate();
-
-parsel.on("message", message => {
-	console.log(`\n\x1b[36m${message}\x1b[0m\n`);
-});
-
-
 const app = express();
 
 app.use(express.json());
@@ -52,6 +43,6 @@ module.exports = new Promise(resolve => {
 	app.listen(9797, _ => {
 		console.log("> API test server started.");
 
-		resolve();
+		resolve(app);
 	});
 });

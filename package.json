@@ -11,6 +11,9 @@
     "build": "node ./scripts/build-src.js --once && node ./scripts/build-dist.js",
     "release": "npm run lint && npm run test && npm run build && np"
   },
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/t-ski/parsel.git"

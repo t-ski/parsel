@@ -13,6 +13,8 @@ module.exports.on = function(...args) {
 
 let mediates = false;
 
+// TODO: Proxy mode OR dedicated route ?
+// TODO: SSL/TLS, ... => EXPOSE, keep actual HTTP interface to localhost
 module.exports.mediate = function() {
 	if(mediates) {
 		throw new RangeError("Duplicate parsel mediation initialization.");
@@ -55,44 +57,38 @@ module.exports.mediate = function() {
 			internalOrigin.host = "localhost";
 			internalOrigin = internalOrigin.toString().replace(/\/$/, "");
 
-			let reqMessage = "Condensed request:";
+			const reqMessage = [];
 			const condensedRes = [];
 			const limit = payload.condensedReq.length;
 
 			payload.condensedReq
-				.forEach(async singleReq => {
+				.forEach(singleReq => {
 					singleReq.options.body = JSON.stringify(singleReq.options.body);
 					
-					const singleRes = await require("./node-fetch")
-					(`${internalOrigin}${singleReq.path}`, singleReq.options);
-
-					let data;
-					try {
-						data = await singleRes.json();
-					} catch {
-						data = await singleRes.text();
-					}
-
-					delete singleRes.text;
-					delete singleRes.json;
-
-					condensedRes.push({
-						data,
+					require("./node-fetch")(`${internalOrigin}${singleReq.path}`, singleReq.options)
+					.then(async singleRes => {
+						let data = await singleRes.text();
 						
-						...singleRes
+						const { text, json, ...meta } = singleRes;
+
+						condensedRes.push({
+							...meta,
+							
+							data
+						});
+	
+						reqMessage.push(singleReq.path);
+					
+						if(condensedRes.length < limit) {
+							return;
+						}
+	
+						res.statusCode = 200;
+	
+						res.end(JSON.stringify(condensedRes));
+	
+						message(`Entity: [${reqMessage.map(r => `\n + ${r}`).join("")}\n]`);
 					});
-
-					reqMessage += `\n+ ${singleReq.path}`;
-				
-					if(condensedRes.length < limit) {
-						return;
-					}
-
-					res.statusCode = 200;
-
-					res.end(JSON.stringify(condensedRes));
-
-					message(reqMessage);
 				});
 		});
 

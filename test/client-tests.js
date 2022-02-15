@@ -1,5 +1,3 @@
-require("./test-server");
-
 const PARSEL = require("../src/module").client;
 
 const api = new PARSEL({
@@ -11,7 +9,7 @@ const api = new PARSEL({
 // SCHEDULE REQUESTS
 
 test("SCHEDULE GET should respond with 200 : 'Success'", done => {
-    api.schedule("/resource/0", {
+    api.schedule.add("/resource/0", {
         method: "get"
     })
     .then(async res => {
@@ -23,10 +21,10 @@ test("SCHEDULE GET should respond with 200 : 'Success'", done => {
 });
 
 test("SCHEDULE POST should respond with 200 : [object]", done => {
-    api.schedule("/resource", {
+    api.schedule.add("/resource", {
         method: "post",
         body: {
-            b: 1
+            a: 1
         }
     })
     .then(async res => {
@@ -38,7 +36,7 @@ test("SCHEDULE POST should respond with 200 : [object]", done => {
 });
 
 test("SCHEDULE GET should respond with 404", done => {
-    api.schedule("/missing/0", {
+    api.schedule.add("/missing/0", {
         method: "get"
     })
     .then(res => {
@@ -49,7 +47,7 @@ test("SCHEDULE GET should respond with 404", done => {
 });
 
 test("SCHEDULE POST should respond with 404", done => {
-    api.schedule("/missing", {
+    api.schedule.add("/missing", {
         method: "post",
         body: {}
     })
@@ -60,7 +58,7 @@ test("SCHEDULE POST should respond with 404", done => {
     });
 });
 
-api.complete();
+api.schedule.complete();
 
 
 // INTERVAL REQUESTS
@@ -83,6 +81,20 @@ test("INTERVAL GET should respond with 404", done => {
     })
     .then(res => {
         value(res.status).for(404);
+        
+        done();
+    });
+});
+
+// IMMEDIATE REQUESTS
+
+test("IMMEDIATE GET should respond with 404", done => {
+    api.immediate("/resource/0", {
+        method: "get"
+    })
+    .then(async res => {
+        value(res.status).for(200);
+        value(await res.text()).for("Success");
         
         done();
     });

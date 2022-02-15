@@ -2,46 +2,53 @@ module.exports = function(url, { body, ...options }) {
 	url = new URL(url);
 	
 	const modOptions = {
+		...options,
+
 		hostname: url.hostname,
 		port: url.port,
-		path: `${url.pathname}${url.hash || ""}${url.query || ""}`,
-        
-		...options
+		path: `${url.pathname}${url.hash || ""}${url.query || ""}`,        
 	};
+
+	modOptions.headers = modOptions.headers || {};
+	modOptions.headers["Content-Type"] = "application/json";
 
 	return new Promise((resolve, reject) => {
 		const req = require(url.protocol
-		.replace(/:$/, "").toLowerCase())
-		.request(modOptions, res => {
-			let body = [];
-	
-			res.on("data", chunk => {
-				body.push(chunk);
-			});
-	
-			res.on("end", _ => {
-				body = String(body);
-
-				const promisify = value => {
-					return new Promise(resolve => {
-						resolve(value);
-					});
-				};
-				
+			.replace(/:$/, "").toLowerCase())
+			.request(modOptions, res => {
 				resolve({
 					headers: res.headers,
 					status: res.statusCode,
 					
 					text: _ => {
-						return promisify(body);
+						return new Promise(resolve => {
+							let body = [];
+							
+							res.on("data", chunk => {
+								body.push(chunk);
+							});
+
+							res.on("end", _ => {
+								resolve(String(body));
+							});
+						});
 					},
 					json: _ => {
-						return promisify(JSON.parse(body));
+						return new Promise(resolve => {
+							let body = [];
+				
+							res.on("data", chunk => {
+								body.push(chunk);
+							});
+
+							res.on("end", _ => {
+								resolve(JSON.parse(String(body)));
+							});
+						});
 					}
 				});
 			});
-		});
-
+		
 		body && req.write(body);
 
 		req.on("error", err => {

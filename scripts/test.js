@@ -79,21 +79,38 @@ const logMessageStack = [];
 global.test = function(descriptor, body) {
     testMeta.passed++;
 
-    body(_ => {
+    const complete = _ => {
         log(`${highlight.badge("Test", null, [255, 175, 215])}${highlight.sequence(descriptor, null, null, "\x1b[1m")}\n`, 1);
-        
-        logMessageStack.forEach(message => {
-            log(message);
+    }
+
+    try {
+        body(_ => {
+            complete();
+
+            logMessageStack.forEach(message => {
+                log(message);
+            });
+            logMessageStack.length = 0;
         });
-        logMessageStack.length = 0;
-    });
+    } catch(err) {
+        complete();
+
+        log(highlight.sequence(`↓ Uncaught ${err.constructor.name} ↓\n`, [255, 0, 0]), 1);
+        log(err, 1);
+
+        testMeta.passed--; 
+        testMeta.failed++;
+    }
 };
 
 global.value = function(evaledValue) {
     return {
         for: expectedValue => {
-            const passed = (evaledValue === expectedValue);
-
+            const isAtomic = ["string", "number", "boolean"].includes(typeof(expectedValue));
+            const passed = isAtomic
+            ? (evaledValue === expectedValue)
+            : (JSON.stringify(evaledValue) == JSON.stringify(expectedValue));
+            
             logMessageStack.push(`${passed ? highlight.sequence("✓", [0, 200, 75]) : highlight.sequence("✗", [255, 0, 0])} Expected ${highlight.type(expectedValue)}, got ${highlight.type(evaledValue)}!`);
 
             if(passed) {
