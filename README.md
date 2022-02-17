@@ -194,9 +194,9 @@ api.schedule.complete();
 
 ### Immediate requests
 
-> ↳ `immediate()`
+> ↳ `immediate`
 
-The immediate request interface exists for providing consistency in the API communication behavior. It provides a direct communication method working very similar to the browser native `fetch()`.
+The immediate request interface exists for providing consistency in the API communication behavior. It provides a direct communication method with `immediate()` working very similar to the browser native `fetch()`.
 
 ``` js
 api.immediate("/spells", {

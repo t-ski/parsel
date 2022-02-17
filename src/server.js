@@ -3,37 +3,47 @@ const config = {
 	proxyPort: 5757
 };
 
+// TODO: Cache implementation
+// TODO: Proxy mode OR dedicated route ?
+// TODO: SSL/TLS, ... => EXPOSE, keep actual HTTP interface to localhost
 
+/**
+ * Event emission interface for public messaging.
+ */
 const eventEmitter = new (require("events"))();
+
+function message(message) {
+	eventEmitter.emit("message", message);
+}
 
 module.exports.on = function(...args) {
 	eventEmitter.on(...args);
 };
 
-
+/**
+ * 
+ */
 let mediates = false;
 
-// TODO: Proxy mode OR dedicated route ?
-// TODO: SSL/TLS, ... => EXPOSE, keep actual HTTP interface to localhost
 module.exports.mediate = function() {
+	// No duplicate mediation (single proxy)
 	if(mediates) {
 		throw new RangeError("Duplicate parsel mediation initialization.");
 	}
-
 	mediates = true;
 
-	function message(message) {
-		eventEmitter.emit("message", message);
-	}
-	
-	// parsel cache
+	/**
+	 * Create proxy server.
+	 * Receives condensed requests in order to split them up into single ones.
+	 * Single requests submit asynchronically and (re-)merged for condensed response.
+	 */
 	require("http")
 		.createServer(handleRequest)
 		.listen(config.proxyPort,
 			() => {
 				message("Parsel mediation activated");
 			});
-
+	
 	async function handleRequest(req, res) {
 		res.setHeader("Access-Control-Allow-Origin", "*");
 
