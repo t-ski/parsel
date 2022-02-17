@@ -244,7 +244,7 @@ class Scope {
 		complete: _ => {
 			return this.ScheduleRequest.complete(this.origin);
 		}
-	}
+	};
     
 	/**
 	 * Retrieve scope information.

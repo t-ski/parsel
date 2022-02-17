@@ -6,6 +6,7 @@ const config = {
 // TODO: Cache implementation
 // TODO: Proxy mode OR dedicated route ?
 // TODO: SSL/TLS, ... => EXPOSE, keep actual HTTP interface to localhost
+// TODO: Use localhost only for server-local communication; requires manual interface setup (address, ...)
 
 /**
  * Event emission interface for public messaging.
@@ -76,29 +77,30 @@ module.exports.mediate = function() {
 					singleReq.options.body = JSON.stringify(singleReq.options.body);
 					
 					require("./node-fetch")(`${internalOrigin}${singleReq.path}`, singleReq.options)
-					.then(async singleRes => {
-						let data = await singleRes.text();
-						
-						const { text, json, ...meta } = singleRes;
-
-						condensedRes.push({
-							...meta,
+						.then(async singleRes => {
+							let data = await singleRes.text();
 							
-							data
-						});
+							// eslint-disable-next-line
+							const { text, json, ...meta } = singleRes;
+
+							condensedRes.push({
+								...meta,
+							
+								data
+							});
 	
-						reqMessage.push(singleReq.path);
+							reqMessage.push(singleReq.path);
 					
-						if(condensedRes.length < limit) {
-							return;
-						}
+							if(condensedRes.length < limit) {
+								return;
+							}
 	
-						res.statusCode = 200;
+							res.statusCode = 200;
 	
-						res.end(JSON.stringify(condensedRes));
+							res.end(JSON.stringify(condensedRes));
 	
-						message(`Entity: [${reqMessage.map(r => `\n + ${r}`).join("")}\n]`);
-					});
+							message(`Entity: [${reqMessage.map(r => `\n + ${r}`).join("")}\n]`);
+						});
 				});
 		});
 

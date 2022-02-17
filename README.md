@@ -223,22 +223,15 @@ api.info();
 
 ### Mediation
 
-Parsel is mediating an API representing an intermediate node in the communication between client and server. There are two ways of integrating Parsel into an API server:
+Parsel is mediating an API representing an intermediate node in the communication between client and server. Since it is a fundamental design principle of Parsel to not change the way APIs are built and accessed, the mediation concept is realized with a HTTP proxy instance.  
+  
+Setting up Parsel mediation requires a single statement:
 
-1. Assigning Parsel a dedicated API route
-2. Having Parsel act as a proxy instance
+``` js
+parsel.mediate();
+```
 
-#### 1. Dedicated route
-
-For a seamless integration into an existing API – benefiting from globally effective API middleware layers – it is most effective to have Parsel mediate from a specific route in the API architecture.
-
-##### Prerequisites
-
-- Body parsing
-
-#### 2. Proxy
-
-Using a proxy the API itself does not need to be adapted at all in order to use Parsel. The Parsel proxy must just be set up using the mediation method, no matter form which module.
+> The API logic must not be changed at all, nor do related modules need to state the mediation call.
 
 ### Message events
 
@@ -246,7 +239,7 @@ During operation Parsel emits `message` events that can be listened for (e.g. fo
 
 ``` js
 parsel.on("message", msg => {
-    console.log(msg)
+    console.log(msg);
 });
 ```
 

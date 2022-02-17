@@ -1,5 +1,5 @@
-class Cache {
-    constructor() {
-        this.storage = {};
-    }
-}
+/* class Cache {
+	constructor() {
+		this.storage = {};
+	}
+} */
