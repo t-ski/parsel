@@ -4,8 +4,7 @@
         <title>Parsel Test</title>
         <script src="/parsel.min.js"></script>
         <script>
-            const api = new PARSEL({
-                origin: "http://localhost:9797",
+            const api = new PARSEL("http://localhost:9797", {
                 headers: {
                     "Content-type": "application/json; charset=UTF-8"
                 },

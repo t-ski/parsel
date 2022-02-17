@@ -25,7 +25,7 @@ module.exports.mediate = function() {
 	function message(message) {
 		eventEmitter.emit("message", message);
 	}
-
+	
 	// parsel cache
 	require("http")
 		.createServer(handleRequest)

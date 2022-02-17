@@ -4,19 +4,25 @@ const config = {
 };
 
 
+// TODO: Options: interval size relative to loading duration(s)?
+
 class Request {
 	static queue;
+
+	static defaultOptions = {
+		method: "GET"
+	};
 
 	static complete(origin) {
 		let curQueue = [].concat(this.queue);
 		this.queue.length = 0;
-        
+
 		// TODO: If given protocol less retrieve registered related origin
 		const condensedReq = curQueue
 			.map(req => {
 				return {
 					options: req.options,
-					path: `${req.url.pathname}${req.hash || ""}${req.query || ""}`
+					path: req.endpoint
 				};
 			});
         
@@ -55,18 +61,18 @@ class Request {
 		});
 	}
 
-	constructor(config, endpoint, options) {
-		options.headers = Object.assign(
-			(options.headers || {}),
-			(config.headers || {})
-		);
-		this.options = options;
-        
+	constructor(endpoint, options = {}) {
+		options.headers = {
+			...(options.headers || {}),
+			...(config.headers || {})
+		};
+		this.options = {
+			...this.defaultOptions,
+			...options
+		};
+
 		// Retrieve related proxy URL
-		const url = (endpoint.charAt(0) == "/")
-			? `${config.origin}${endpoint}`
-			: endpoint;
-		this.url = new URL(url);
+		this.endpoint = endpoint;
         
 		this.constructor.queue
 			.push(this);
@@ -102,40 +108,23 @@ class Request {
 class Scope {
 	static IntervalRequest = class extends Request {
 		static queue = [];
-		static timeout;
-    
-		constructor(config, endpoint, options) {
-			super(config, endpoint, options);
-
-			if(this.constructor.timeout) {
-				return;
-			}
-            
-			this.constructor.timeout = setTimeout(_ => {
-				this.constructor.complete(config.origin);
-			}, config.interval || 250);
-		}
 	};
     
 	static ScheduledRequest = class extends Request {
 		static queue = [];
-    
-		constructor(config, endpoint, options) {
-			super(config, endpoint, options);
-		}
 	};
     
 	static ImmediateRequest = class extends Request {
 		static queue = [];
-    
-		constructor(config, endpoint, options) {
-			super(config, endpoint, options);
-		}
 	};
 
+	static defaultConfig = {
+		interval: 250
+	};
+	static intervalTimeout;
 
 	// TODO Interface to .then() resolve all realted condensed
-	constructor(config) {
+	constructor(origin, config) {
 		for(const key in config) {
 			switch(key) {
 			case "interval":
@@ -155,47 +144,65 @@ class Scope {
 			}
 		}
         
-		if(!config.origin) {
-			throw new ReferenceError("Missing origin configururation");
+		if(!origin) {
+			throw new ReferenceError("Origin not defined");
 		}
+		this.origin = origin;
 
-		this.config = config;
+		this.config = {
+			...this.constructor.defaultConfig,
+			...config
+		};
 
 		this.schedule = {
 			add: (pathname, options) => {
-				return this.constructor.ScheduledRequest.instanciate(this.config, pathname, options);
+				return this.constructor.ScheduledRequest.instanciate(pathname, options);
 			},
 			complete: _ => {
-				return this.constructor.ScheduledRequest.complete(this.config.origin);
+				return this.constructor.ScheduledRequest.complete(this.origin);
 			}
 		};
 	}
 
 	immediate(pathname, options) {
-		const res = this.constructor.ImmediateRequest.instanciate(this.config, pathname, options);
+		const res = this.constructor.ImmediateRequest.instanciate(pathname, options);
 
-		this.constructor.ImmediateRequest.complete(this.config.origin);
+		this.constructor.ImmediateRequest.complete(this.origin);
 
 		return res;
 	}
 
 	interval(pathname, options) {
-		return this.constructor.IntervalRequest.instanciate(this.config, pathname, options);
+		const res = this.constructor.IntervalRequest.instanciate(pathname, options);
+
+		if(!this.constructor.intervalTimeout) {
+			this.constructor.intervalTimeout = setTimeout(_ => {
+				this.constructor.IntervalRequest.complete(this.origin);
+			}, this.config.interval);
+		}
+		
+		return res;
 	}
     
 	info() {
-		const info = this.constructor.ScheduledRequest.queue
-			.map(obj => {
-				return {
-					pathname: obj.pathname,
-					options: obj.options
-				};
-			});
-    
-		console.log("Scheduled parsel requests:");
-		console.log(info);
-		console.log("Configuration:");
-		console.log(this.config);
+		const retrieveRequestInfo = queue => {
+			return queue
+				.map(obj => {
+					return {
+						pathname: obj.pathname,
+						options: obj.options
+					};
+				});
+		};
+		
+		return {
+			origin: this.origin,
+			configuration: this.config,
+			pending: {
+				interval: retrieveRequestInfo(this.constructor.IntervalRequest.queue),
+				scheduled: retrieveRequestInfo(this.constructor.ScheduledRequest.queue)
+			}
+		};
 	}
 }
 

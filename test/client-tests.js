@@ -1,7 +1,6 @@
 const PARSEL = require("../src/module").client;
 
-const api = new PARSEL({
-    origin: "http://localhost:9797",
+const api = new PARSEL("http://localhost:9797", {
     interval: 250
 });
 
@@ -36,9 +35,7 @@ test("SCHEDULE POST should respond with 200 : [object]", done => {
 });
 
 test("SCHEDULE GET should respond with 404", done => {
-    api.schedule.add("/missing/0", {
-        method: "get"
-    })
+    api.schedule.add("/missing/0")
     .then(res => {
         value(res.status).for(404);
         
@@ -64,9 +61,7 @@ api.schedule.complete();
 // INTERVAL REQUESTS
 
 test("INTERVAL GET should respond with 200 : 'Success'", done => {
-    api.interval("/resource/0", {
-        method: "get"
-    })
+    api.interval("/resource/0")
     .then(async res => {
         value(res.status).for(200);
         value(await res.text()).for("Success");

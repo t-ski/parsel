@@ -2,51 +2,47 @@
 
 HTTP API mediation interface for automatic request/response condensation. Enhances throughput performance in high-scale environments.
 
-`t 0.0`&ensp;|&ensp;`request 1` → `API`&ensp;|&ensp;`t 0.1`  
-`t 1.0`&ensp;|&ensp;`request 2` → `API`&ensp;|&ensp;`t 1.1`  
-`t 2.0`&ensp;|&ensp;`request 3` → `API`&ensp;|&ensp;`t 2.1`  
+<sup>...conventionally:</sup>  
+`request 1` ⇄ `API`  
+`request 2` ⇄ `API`  
+`request 3` ⇄ `API`  
   
-`t 0.0`&ensp;|&ensp;`request 1` ┓  
-`t 1.0`&ensp;|&ensp;`request 2`&ensp;↦ `API`&ensp;|&ensp;`t 2.1`  
-`t 2.0`&ensp;|&ensp;`request 3` ┛
+<sup>...with **Parsel**:</sup>  
+`request 1` ┓  
+`request 2`&ensp;| ⇄ `API`  
+`request 3` ┛
 
 ## Introduction
 
-Most HTTP API designs – REST in particular – segregate atomic resource access with HTTP parameters for stateless operation. Initializing a consuming client interface, multiple API requests are usually submitted concurrently or within an infinitesimal time interval.  
+Most HTTP API designs – REST in particular – segregate atomic resource access with HTTP parameters for stateless operation. Initializing a consuming client interface, multiple API requests are usually submitted concurrently or within an infinitesimal time window in order to retrieve individual data. Instead of sending multiple requests with complete API endpoint roundtimes each they could be condensed into a single, outcome equivalent request.
   
-Parsel provides a communication mediator between (API) server and client: Based on different strategies, multiple contextually related requests are being condensed into a single request. However, that behavior is abstract to the user; Parsel is exporting a Promise interface similar to the `axios` library.
+Parsel provides a communication mediator between (API) server and client: Based on different strategies, multiple contextually related requests are being condensed into a single request. However, that behavior is abstract to the user; Parsel is exporting a Promise interface similar to the *axios* library.
 
 ### Example
 
 ``` js
 // Parsel API connection interface
-const api = new PARSEL({
-    origin: "https://example.com",
+const api = new PARSEL("https://example.com", {
     interval: 250
 });
 
 // interval(): Condense requests made within configured interval:
-api.interval("/resource/0", {
-    method: "get"  // Fetch augmented
-})
+api.interval("/schools/0")
 .then(res => res.text())
 .then(res => console.log(res));
 
-api.interval("/resource/1", {
-    method: "get"  // Fetch augmented
-})
-.then(res => res.json())
-.then(res => console.log(res));
-
-// schedule(): Condense requests made until manual completion:
-const scheduledReq1 = api.schedule("/resource/2", {
-    method: "get"
+const intervalReq2 = api.interval("/schools/1", {
+    method: "GET"
 });
 
-const scheduledReq2 = api.schedule("/resource", 
-    method: "post",
+// schedule(): Condense requests made until manual completion:
+const scheduleReq1 = api.schedule("/pupils/2");
+
+const scheduleReq2 = api.schedule("/pupils", 
+    method: "POST",
     body: {
-        name: "Harry"
+        name: "Harry Potter",
+        gender: gender.MALE
     }
 });
 
@@ -83,35 +79,145 @@ const parsel = require("parsel").server;
 
 ### Scopes
 
-Every independent API communication can be organized from a specific Parsel scope object. Creating a scope, you have to provide it with the API origin infirmation and additional configurations.  
+Every independent API communication can be organized from a specific Parsel scope object. Creating a scope, it has to be provided it with the API origin and optional configuration data.  
   
 In the below stated example we create a Parsel scope object. It is given a cnfiguration object stating the related API *origin* (also referred to as *base URL*) which all the requests will be associated with and the interval (condensation window) size upon which respective requests will be condensed.
 
+#### Syntax
+
 ``` js
-const api = new PARSEL({
-    origin: "https://example.com",
-    interval: 250
-});
+const api = new PARSEL(origin, options = {});
 ```
 
-#### Properties
+##### Parameter
 
-| Name       | Type     | Description |
-| :--------- | :------- | :---------- |
-| `origin`   | *String* | API origin |
-| `interval` | *Number* | Condensation interval size in ms |
+| Name      | Type     | Description |
+| :-------- | :------- | ----------- |
+| `origin`  | *String* | Origin URL |
+| `options` | *Object* | Optional configurations  |
+
+##### Options properties
+
+| Name       | Type     | Description                      | Default |
+| :--------- | :------- | :------------------------------- | :------ |
+| `interval` | *Number* | Condensation interval size in ms | 250     |
 
 ### Requests
 
-Constructing a UI, usually several API requests are (concurrently) made upon the initialization process in order to obtain individual user data for display. As the UI's loading completes with the last piece of data to be received and rendered accordingly, these requests could be condensed thogether.
+Parsel provides a Promise based request interface accessible from the folowing pattern:
 
-> Condensed requests are not suited for requests significantly differing in payload size. Use traditional, acutally concurrent requests in that case.
+#### Generic Syntax
 
-#### Temporaly `interval()`
+``` js
+api.<request-type>(options = {});
+```
 
-#### Scheduled `schedule.add()`, `schedule.complete()`
+##### Parameter
 
-#### Immediately `immediate()`
+| Name      | Type     | Description |
+| :-------- | :------- | ----------- |
+| `options` | *Object* | Optional configurations |
+
+##### Options properties
+
+| Name      | Type     | Description                                         | Default |
+| :-------- | :------- | :-------------------------------------------------- | :------ |
+| `method`  | *String* | Request method                                      | GET     |
+| `headers` | *Object* | Request headers (dictionary)                        | {}      |
+|           |          | *Additional options (see browser native `fetch()`)* |         |
+
+### Interval requests
+
+> ↳ `interval`
+
+When a user interface is assembled for an individual client, the API requests retrieving respective data usually happen within a small time span. Interval requests made are being codensed alongside those made in the same time window. The window size is to be defined in the scope configuration object provided upon creation.  
+  
+The request interval opens once an interval request is made, hence any subsequent request within the time window is condensed along that activating request. When the time window has run out, the condensed request is submit and processed right before the interval closes. As soon as another interval request fires, the interval is (re-)opens.
+
+> Although absolute time usually does not represent a consistently reliable value among different devices, it serves the case of building a user interface on the client side.
+
+``` js
+const api = new PARSEL("localhost", {
+    interval: 150   // // Interval size 150ms
+});
+
+// 0ms in
+// [ (1st) Request interval opened ]
+const req1 = api.interval("/teachers/0", {
+    method: "GET",
+    headers: {
+        "Authorization": "Bearer 2o38uto1hxgtvyil": 
+    }
+});
+
+// [ ... ]
+
+// 100ms in
+// [ Part of the active request interval ]
+const req2 = api.interval("/teachers/1");
+
+// 150ms in
+// [ Request interval closed ]
+// [ Condensed request submission in background => all request promises resolve ]
+
+// 200ms in
+// [ (2nd) Request interval opened ]
+const req3 = api.interval("/teachers/2");
+```
+
+### Schedule requests
+
+> ↳ `schedule.add` `schedule.complete`
+
+Instead of relying on temporaly condensation, the moment of condensated submission can also be set manually. Using `schedule.add()`, requests can be added to the schedule. Once `schedule.complete()` is called, any previously scheduled request is written to the condensed request and submit.
+
+``` js
+const req1 = api.schedule.add("/wands/0");
+
+// [ ... ]
+
+const req2 = api.schedule.add("/wands/1");
+
+// [ ... ]
+
+const req3 = api.schedule.add("/wands", {
+    method: "POST",
+    body: {
+        length: 37.5,
+        core: "dragon heartstring"
+    }
+});
+
+api.schedule.complete();
+// [ Condensed request submission in background => all request promises resolve ]
+```
+
+### Immediate requests
+
+> ↳ `immediate()`
+
+The immediate request interface exists for providing consistency in the API communication behavior. It provides a direct communication method working very similar to the browser native `fetch()`.
+
+``` js
+api.immediate("/spells", {
+    method: "POST",
+    body {
+        type: "charm",
+        dictum: "Expecto Patronum"
+    }
+});
+// [ Immediate, singular request submission => request promise resolves ]
+```
+
+### Get scope information
+
+Information about a referenced scope including to its configuration and pending requests can be obtained calling `info()`:
+
+``` js
+api.info();
+```
+
+> The method returns an object.
 
 ## Server Interface
 
@@ -119,18 +225,29 @@ Constructing a UI, usually several API requests are (concurrently) made upon the
 
 Parsel is mediating an API representing an intermediate node in the communication between client and server. There are two ways of integrating Parsel into an API server:
 
-- Giving Parsel a dedicated API route
-- Having Parsel act as a proxy
+1. Assigning Parsel a dedicated API route
+2. Having Parsel act as a proxy instance
 
-#### Dedicated route
+#### 1. Dedicated route
 
-For a seamless integration into an existing API – benefiting from globally effective API middleware layers – it is most effective to have Parsel mediate from a specific route in your API architecture.
+For a seamless integration into an existing API – benefiting from globally effective API middleware layers – it is most effective to have Parsel mediate from a specific route in the API architecture.
 
 ##### Prerequisites
 
 - Body parsing
 
-#### Proxy
+#### 2. Proxy
 
-### Events
+Using a proxy the API itself does not need to be adapted at all in order to use Parsel. The Parsel proxy must just be set up using the mediation method, no matter form which module.
 
+### Message events
+
+During operation Parsel emits `message` events that can be listened for (e.g. for feeding a logging mechanism).
+
+``` js
+parsel.on("message", msg => {
+    console.log(msg)
+});
+```
+
+> The callback is passed an object.
